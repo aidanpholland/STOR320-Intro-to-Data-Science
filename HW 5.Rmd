@@ -1,0 +1,124 @@
+---
+title: "Homework 5"
+author: "AIDAN HOLLAND"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Instructions
+
+**Exercises:**  1,3 (Pg. 227); 2 (Pg. 232); 1,2 (Pg. 235); 
+
+**Submission:** Submit via an electronic document on Sakai. Must be submitted as a HTML file generated in RStudio. All assigned problems are chosen according to the textbook *R for Data Science*. You do not need R code to answer every question. If you answer without using R code, delete the code chunk. If the question requires R code, make sure you display R code. If the question requires a figure, make sure you display a figure. A lot of the questions can be answered in written response, but require R code and/or figures for understanding and explaining.
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+# Chapter 12 (Pg. 227)
+
+##  Exercise 1
+```{r}
+rplot <-
+  gss_cat %>%
+  ggplot(aes(x=rincome))+
+  geom_bar()+
+  coord_flip()
+rplot
+```
+
+The plot is difficult to understand because all the xlabels are horizontal. If we flip the coordinates, we can read the labels.
+
+##  Exercise 3
+```{r}
+gss_cat %>%
+  filter(!denom %in% c("No answer", "Other", "Don't know", "Not applicable", "No denomination")) %>%
+  count(relig)
+```
+
+# Chapter 12 (Pg. 232)
+
+##  Exercise 2
+```{r}
+keep(gss_cat,is.factor) %>%
+  names()
+gss_cat %>%
+  ggplot(aes(x=marital))+
+  geom_bar()+
+  coord_flip()
+
+levels(gss_cat$race)
+gss_cat %>%
+  ggplot(aes(race))+
+  geom_bar()+
+  coord_flip()
+
+levels(gss_cat$rincome)
+
+levels(gss_cat$relig)
+gss_cat %>%
+  ggplot(aes(relig))+
+  geom_bar()+
+  coord_flip()
+
+levels(gss_cat$denom)
+levels(gss_cat$partid)
+```
+
+Marital - arbitrary
+Race - principled
+Rincome - principled except for no answer, etc., which is arbitrary
+Relig - arbitrary
+Denom - arbitrary
+Partyid - principled except for no answer, etc., which is arbitrary
+
+
+# Chapter 12 (Pg. 235)
+
+##  Exercise 1
+```{r}
+levels(gss_cat$partyid)
+gss_cat %>%
+  mutate(
+    partid = fct_collapse(
+      partyid,
+      other = c("No answer", "Don't know", "Other party"),
+      rep = c("Strong republican", "Not str republican"),
+      ind = c("Ind, near rep", "Independent", "Ind, near dem"),
+      dem = c("Not str democrat", "Strong democrat")
+    )
+  ) %>%
+  count(year, partid) %>%
+  group_by(year) %>%
+  mutate(p = n / sum(n)) %>%
+  ggplot(aes(x = year, y = p, color = partid)) +
+  geom_point() +
+  geom_line() +
+  labs(color = "Party ID")
+```
+
+##  Exercise 2
+```{r}
+library("stringr")
+gss_cat %>%
+  mutate(
+    rincome =
+      fct_collapse(
+        rincome,
+        `Unknown` = c("No answer", "Don't know", "Refused", "Not applicable"),
+        `Lt $5000` = c("Lt $1000", str_c(
+          "$", c("1000", "3000", "4000"),
+          " to ", c("2999", "3999", "4999")
+        )), `$5000 to 10000` = str_c(
+          "$", c("5000", "6000", "7000", "8000"),
+          " to ", c("5999", "6999", "7999", "9999"))
+      )
+  ) %>%
+  ggplot(aes(x = rincome)) +
+  geom_bar() +
+  coord_flip()
+```

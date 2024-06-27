@@ -1,0 +1,162 @@
+---
+title: "Homework 6"
+author: "AIDAN HOLLAND"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Instructions
+
+**Exercises:**  4 (Pg. 302); 1 (Pgs. 316-317); 1 (Pgs. 328-329); 1, 2 (Pgs. 353-354)
+
+**Submission:** Submit via an electronic document on Sakai. Must be submitted as a HTML file generated in RStudio. All assigned problems are chosen according to the textbook *R for Data Science*. You do not need R code to answer every question. If you answer without using R code, delete the code chunk. If the question requires R code, make sure you display R code. If the question requires a figure, make sure you display a figure. A lot of the questions can be answered in written response, but require R code and/or figures for understanding and explaining.
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+# Chapter 16 (Pg. 302)
+
+##  Exercise 4
+
+### a)
+```{r,eval=T}
+lastvaluefunc <- function(x) {
+  if(length(x)) {
+    x[[length(x)]]
+  }
+  else
+    x
+}
+```
+
+### b)
+```{r,eval=T}
+evenvaluefunc <- function(x) {
+  if(length(x)) {
+    x[seq_along(x) %% 2 == 0]
+  }
+  else
+    x
+  }
+```
+
+### c)
+```{r,eval=T}
+removelastvaluefunc <- function(x) {
+  x <- x[1:(length(x)-1)]
+}
+```
+
+### d)
+```{r,eval=T}
+onlyevenvaluesfunc <- function(x) {
+  x[x%%2==0]
+}
+```
+
+# Chapter 17 (Pgs. 316-317)
+
+##  Exercise 1
+
+### a)
+```{r,eval=T}
+meanmtcars <- vector("double",ncol(mtcars))
+names(meanmtcars) <- names(mtcars)
+for(i in names(mtcars)) {
+  meanmtcars[i]<-mean(mtcars[[i]])
+}
+meanmtcars
+```
+
+### b)
+```{r,eval=T}
+coltypesflights <- vector("list",ncol(nycflights13::flights))
+names(coltypesflights) <- names(nycflights13::flights)
+for(i in names(coltypesflights)){
+  coltypesflights[[i]]<- class(nycflights13::flights[[i]])
+}
+coltypesflights
+```
+
+### c)
+```{r,eval=T}
+data("iris")
+irisu <- vector("double",ncol(iris))
+names(irisu)<- names(iris)
+for(i in names(iris)) {
+  irisu[i] <- n_distinct(iris[[i]])
+}
+irisu
+```
+
+### d)
+```{r,eval=T}
+set.seed(0)
+mew <- c(-10,0,10,100)
+rnorms<- vector("list",length(mew))
+for(i in seq_along(rnorms)) {
+  rnorms[[i]] <- rnorm(10,mean=mew[i])
+}
+rnorms
+```
+
+# Chapter 17 (Pgs. 328-329)
+
+##  Exercise 1
+
+### a)
+```{r,eval=T}
+mtcarsmeans<-map_dbl(mtcars,mean)
+mtcarsmeans
+```
+
+### b)
+```{r,eval=T}
+coltypesnycflights<-map_chr(nycflights13::flights,typeof)
+coltypesnycflights
+```
+
+### c)
+```{r,eval=T}
+irisu<-map_dbl(iris,n_distinct)
+irisu
+```
+
+### d)
+```{r,eval=T}
+map(c(-10,0,10,100),~rnorm(10,mean=.))
+```
+
+# Chapter 18 (Pgs. 353-354)
+
+##  Exercise 1
+```{r,eval=T}
+sim1a <- tibble(
+ x = rep(1:10, each = 3),
+ y = x * 1.5 + 6 + rt(length(x), df = 2)
+)
+
+ggplot(sim1a,aes(x=x,y=y))+
+  geom_point()+
+  geom_smooth(method="lm",se=FALSE)
+```
+
+I notice that outliers occur often, however do not pull the data in their direction an exorbitant amount.
+
+##  Exercise 2
+```{r,eval=T}
+measure_distance <- function(mod, data) {
+ diff <- data$y - make_prediction(mod, data)
+ mean(abs(diff))
+}
+make_prediction <- function(mod,data){
+  mod[1]+mod[2]*data$x
+}
+bestfit <- optim(c(0,0),measure_distance,data=sim1a)
+bestfit$par
+```

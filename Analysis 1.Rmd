@@ -1,0 +1,309 @@
+---
+title: "Analysis 1: UNC Salaries"
+author: "AIDAN HOLLAND"
+date:  "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+# Instructions
+
+**Overview:** For each question, show your R code that you used to answer each question in the provided chunks. When a written response is required, be sure to answer the entire question in complete sentences outside the code chunks. When figures are required, be sure to follow all requirements to receive full credit. Point values are assigned for every part of this analysis. **Do not work with other students on this assignment. You are to complete this assignment by yourself.**
+
+**Helpful:** Make sure you knit the document as you go through the assignment. Check all your results in the created HTML file.
+
+**Submission:** Submit via an electronic document on Canvas. Must be submitted as an HTML file generated in RStudio. 
+
+# Introduction
+
+Universities are typically opaque, bureaucratic institutions. To be transparent to tax payers, many public schools, such as the University of North Carolina, openly report **[salary information](http://www.newsobserver.com/news/databases/public-salaries/)**. In this assignment, we will analyze this information from 2022 to answer pivotal questions that have endured over the course of time. This salary data for UNC-Chapel Hill faculty and staff was downloaded in CSV format and titled *"Salary Data Export.csv"*.
+
+To answer all the questions, you will need the R package `tidyverse` to make figures and utilize `dplyr` functions.
+
+
+```{r setup, include=F}
+options(scipen=999)
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Data Information
+
+Make sure the CSV data file is contained in the folder of your RMarkdown file. First, we start by using the `read_csv` function from the `readr` package found within the tidyverse. The code below executes this process by creating a tibble in your R environment named "salary".
+```{r, message=F}
+salary=read_csv("Salary Data Export.csv")
+```
+
+Now, we will explore the information that is contained in this dataset. The code below provides the names of the variables contained in the dataset.
+
+```{r}
+names(salary)
+```
+
+Next, we will examine the type of data contains in these different variables. 
+```{r}
+str(salary,give.attr=F)
+```
+You will notice that the variable "Hire_Date" is recorded as a character. The following code will first modify the original dataset to change this to a date variable with the format *mm/dd/yyyy*. Then, we will remove the hyphens to create a numeric variable as *yyyymmdd*. Finally, in the spirit of tidyverse, we will convert this data frame to a tibble.
+
+```{r}
+salary$Hire_Date_Pre=as.Date(salary$Hire_Date, format="%m/%d/%Y")
+salary$Hire_Date=as.numeric(gsub("-","",salary$Hire_Date_Pre))
+salary=as_tibble(salary)
+```
+
+Now, we will use `head()` to view of first five rows and the modifications made to the original data. The rest of the assignment will extend off this modified dataset named `salary` which by now should be in your global environment.
+```{r}
+head(salary,5)
+```
+
+# Assignment
+
+
+## Part 1: Reducing the Data to a Smaller Set of Interest
+
+
+### Q1 *(2 Points)* 
+
+Create a new dataset named `salary2` that only contains the following variables:
+
+- "Last_Name"
+
+- "First_Name"
+
+- "Age"
+
+- "Hire_Date"
+
+- "Category"
+
+- "Salary"
+
+- "Department"
+
+
+Then, use the `names()` function to display the variable names of `salary2`.
+```{r}
+salary2 <- select(salary, Last_Name, First_Name, Age, Hire_Date, Category, Salary, Department)
+names(salary2)
+```
+
+### Q2 *(2 Points)*
+
+Now, we modify `salary2`. Rename the variables "Last_Name","First_Name", and "Hire_Date" to "Last","First", and "Hire", respectively. Do this for a new dataset called `salary3` and use `names()` to display the variable names of `salary3`.
+```{r}
+salary3 <- rename(salary2, Last=Last_Name, First=First_Name, Hire=Hire_Date)
+names(salary3)
+```
+
+### Q3 *(2 Points)*
+
+Now, we modify `salary3`. Create a new variable called "HireYear" that only contains the first four digits of the variable "Hire" in a new dataset named `salary4`. Use the function `str()` to ensure that your new variable "HireYear" reports the year of the date that the employee was hired. **The variable "HireYear" should be numeric.**
+
+```{r}
+salary4 <- mutate(salary3, HireYear=as.numeric(substr(Hire, 1, 4)))
+str(salary4)
+```
+
+### Q4 *(2 points)*
+
+Now, we modify `salary4`. Create a new variable called "YrsEmployed" which reports the number of full years the employee has worked at UNC. Use the current year and assume that all employees are hired January 1. Create a new dataset named `salary5` and again use `str()` to display the variables in `salary5`.
+
+```{r}
+salary5 <- mutate(salary4, YrsEmployed=2024-HireYear)
+str(salary5)
+```
+
+### Q5 *(3 points)*
+
+Now, we modify `salary5` to create our final dataset named `salary.final`. Use the pipe `%>%` to make the following changes:
+
+- Drop the variables "Hire", "HireYear", "First", and "Last". 
+
+- Sort the observations first by "YrsEmployed" and then by "Salary", both in ascending order from smallest to largest.
+
+- Rearrange the variables so that "YrsEmployed" and "Salary" are the first two variables in the dataset, in that order, without removing any of the other variables.
+
+After you have used the `%>%` to make these changes, use the function `head()` to display the first 12 rows of `salary.final`.
+
+```{r}
+salary.final <- salary5 %>%
+  select(YrsEmployed, Salary, Age, Category, Department) %>%
+  arrange(YrsEmployed, Salary)
+head(salary.final,12)
+```
+
+## Part 2: Answering Questions Based on All Data
+
+In these questions,find the answer using code, and then answer the question using complete sentences below the code. I want to see your answer calculated/presented in your code output and in your writing.
+
+### Q6 *(3 Points)*
+
+What is the difference between the mean salary of employees in my department and the mean salary of employees in Economics?
+
+Code *(2 Points)*:
+```{r}
+econvsstor <- salary.final %>%
+  group_by(Department) %>%
+  select(Department, Salary) %>%
+  summarize(
+    meanSalary=mean(Salary,na.rm=T)) %>%
+  filter(Department=="Statistics and Operations Res"|Department=="Economics")
+print(econvsstor)
+difference <- abs(econvsstor$meanSalary[econvsstor$Department == "Economics"] - econvsstor$meanSalary[econvsstor$Department == "Statistics and Operations Res"])
+print(difference)
+```
+
+Answer *(1 Point)*: (Place Answer Here in Complete Sentences)
+
+The difference between the mean salary of the two departments, STOR (125739.40) and ECON (161385.60), is $35646.26. I took the absolute value to remove any confusion if it was negative; the table indicates that ECON has a higher mean salary by that amount.
+
+### Q7 *(3 Points)* 
+
+What proportion of all assistant professors make more than \$90,000?
+
+Code *(2 Points)*:
+```{r}
+asspromoneymakers <- salary.final %>%
+  select(Category, Salary) %>%
+  filter(salary.final$Category == "Assistant Professor") %>%
+  mutate(moneymaker=Salary>90000)
+proportion <- sum(asspromoneymakers$moneymaker)/nrow(asspromoneymakers)
+print(proportion)
+```
+
+Answer *(1 Points)*: (Place Answer Here in Complete Sentences)
+
+The total proportion of assistant professors that make more than $90,000 is just under 75%. This is calculated by distinguishing the amount of assistant professors that make that amount or more divided by the total number of assistant professors.
+
+### Q8 *(5 Points)*
+
+The categories "Instructor" and "Lecturer" represent employees who are primarily hired for teaching. For all the departments that have at least 3 employees who are primarily hired for teaching, I want you to calculate the total departmental spending for employees who are primarily hired for teaching. Of the departments with at least 3 instructors or lecturers, which department spends the most money for these teaching position and which department spends the least money for these teaching positions. I also want to know how many employees are primarily hired for teaching in each of these two departments. Your code output should show a table that shows the two departments, the number of employees hired for teaching, and the total spending.
+
+Code *(4 Points)*:
+```{r}
+instlect <- salary.final %>%
+  select(Category, Department, Salary) %>%
+  filter(Category=="Instructor" | Category=="Lecturer") %>%
+  group_by(Department) %>%
+  summarize(EmployeeCount = n(),
+            SpendingTotal = sum(Salary)) %>%
+  filter(EmployeeCount>=3) %>%
+  filter(SpendingTotal == max(SpendingTotal)|SpendingTotal ==min(SpendingTotal))
+
+print(instlect)
+```
+
+Answer *(1 Points)*: (Place Answer Here in Complete Sentences)
+
+The table displayed indicates the data of the departments that spend the least and the most on their teaching positions, specifically the exact spending amount and the amount of employees in that department. History spends the least, but also represents the minimum total employees at 3, whereas psychiatry spends the most over its 27 teaching positions.
+
+## Part 3: Answering Questions Based on Summarized Data
+
+In general, it is not good to build an analysis off summarized data. Typically, you would want to analyze relationships and build models off your raw data where each observation is an individual. The future questions are based on summarized data. By doing this, I am unable to make inference or draw conclusions about the population of employees since each observation (row) is no longer a person. Think about this as you answer the following questions.
+
+### Q9 *(4 Points)*
+
+Based off the data in `salary.final`, create a grouped summary based off combinations of "Department" and "Category". Call the new tibble `dept_cat_summary`. Your summarized tibble, `dept_cat_summary`, should report all of the following statistics with corresponding variable names in the following order.
+
+- "n" = number of employees for each combination
+
+- "salary" = average salary for each combination
+
+- "yrs" = average years employed for each combination
+
+- "age_vs_salary" = correlation between the age and salary for each combination
+
+In the process, make sure you use `ungroup()` with the pipe `%>%` to release the grouping so future work is no longer group specific. Also, the `cor()` can be used to calculate the correlation between two variables.
+
+Following the creation of `dept_cat_summary`, prove that your code showing the first 12 rows.
+
+```{r,warning=FALSE}
+dept_cat_summary <- salary.final %>%
+  group_by(Department, Category) %>%
+  summarize(n = n(),
+    salary = mean(Salary),
+    yrs = mean(YrsEmployed),
+    age_vs_salary = cor(Age, Salary)) %>%
+  ungroup()
+
+head(dept_cat_summary, 12)
+```
+
+### Q10 *(4 Points)*
+
+Using the summarized data in `dept_cat_summary`, which 5 "Department" and "Category" combinations have the weakest correlation between age and salary. Only consider "Department" and "Category" combinations that have at least 10 total employees. You can write as much code as you want, but your output should show a table (tibble or data frame) that only lists the "Department", "Category", and the "age_vs_salary" correlation for the 5 combinations you identified.
+
+Code:
+```{r}
+dept_cat_summary2 <- dept_cat_summary %>%
+  filter(n>=10) %>%
+  arrange(abs(age_vs_salary)) %>%
+  select(Department, Category, age_vs_salary)
+head(dept_cat_summary2, 5)
+```
+
+### Q11 *(4 points)*
+
+Create a scatter plot using `geom_point()` along with fitted linear regression lines using `geom_smooth` showing the linear relationship between average salary of Professors and the average years employed of Professors. Put the average years employed on the x-axis of your plot. **For this plot, use the summarized data in `dept_cat_summary` and exclude Departments where there are less than 5 professors.**
+
+Following the plot, please explain what this plot suggests about the relationship between the average years employed and the average salary of professors. Make reference to the figure and use descriptive adjectives (i.e. "strong", "weak", etc.) and terms (i.e. "positive", "negative", etc.) that are appropriate for discussing linear relationships. When consulting the graphic, think about or research online what the shaded region around the regression line indicates. 
+
+Code and Figure *(2 Points)*:
+```{r}
+dept_cat_summary3 <- dept_cat_summary %>%
+  filter(Category == "Professor", n >= 5)
+  
+plot1 <- ggplot(dept_cat_summary3, aes(x=yrs, y=salary)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(x = "Average Years Employed of Professors", y = "Average Salary of Professors") +
+  ggtitle("Professor Salary vs. Employment Years")
+
+plot1
+```
+
+Answer *(2 Points)*: (Place Answer Here in Complete Sentences)
+
+The first descriptor for the graph that comes to mind is "unintuitive". Although it seems very weak, the relationship suggests that an increase in the years employed for a professor results in a decrease in salary, or a negative relationship. I say that it seems very weak because the plot has points that don't seem to represent much of a pattern, yet requires a linear regression model to complete the task anyway. The shaded region is the area of standard error or confidence interval, which indicates any amount of uncertainty in the confidence that we could have in the linear model effectively using employment years to predict salary for professors. Given that the shaded region seems wide, that uncertainty is a little high, especially at the extremes to the left and right of the graph.
+
+### Q12 *(4 Points)*
+
+In `dept_cat_summary`, there are 750 unique departments. You can verify this by using `length(unique(dept_title_summary$Department))`. I want you to select only 3 academic departments not previously discussed or outputted in the assignment, and  display the scatter plots and fitted linear regression lines representing the relationship between the average years employed and the average salary. Typically, the variable we would want to predict is on the y-axis, so assume that we want to predict the average salary. Use `facet_wrap` so that each department has its own figure. Remove the shading of the confidence intervals for the regression lines. **For this plot, use the summarized data in `dept_cat_summary`.**
+
+Code and Figure: 
+```{r}
+# length(unique(dept_cat_summary$Department))
+# unique(dept_cat_summary$Department)
+dept_cat_summary4 <- dept_cat_summary %>%
+  filter(Department=="Biological and Genome Sciences" | Department=="Lineberger Compr Cancer Center"| Department=="Genetics")
+
+plot2 <- ggplot(dept_cat_summary4, aes(x=yrs, y=salary)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "Average Years Employed", y = "Average Salary") +
+  ggtitle("Average Salary vs. Average Employment Years of Various Roles") +
+  facet_wrap(~ Department)
+
+plot2
+```
+
+### Q13 *(3 Points)*
+
+Most academic departments have at least one employee in each of the three following categories: "Professor","Associate Professor", and "Assistant Professor". I want you to choose 3 academic departments that were not previously discussed and not used in your previous question (Q12). These 3 academic departments have to have at least one employee in each of the three categories mentioned.  Then, I want you to construct a tile plot where "Department" is on the x-axis and "Category" is on the y-axis. The color of the tiles should be based off the average salary of all employees in each combination of "Department" and "Category". In the tile, plot I only want to see the three departments you chose on the x-axis and the three categories I chose on the y-axis. I don't want to see every job category. If you construct the plot and discover one or more of the tiles are blank since one or more of your departments is missing representation in one of the three job categories, then choose a different academic department. **The summarized data in `dept_cat_summary` will be helpful here.**
+
+```{r}
+dept_cat_summary_academics <- dept_cat_summary %>%
+  group_by(Department) %>%
+  filter("Professor" %in% Category & "Associate Professor" %in% Category &"Assistant Professor" %in% Category)
+# unique(dept_cat_summary_academics$Department)
+
+dept_cat_summary_academics1 <- dept_cat_summary %>%
+  filter(Department %in% c("Dramatic Art", "Music", "Classics"), Category %in% c("Professor", "Associate Professor", "Assistant Professor"))
+
+plot2 <- ggplot(dept_cat_summary_academics1, aes(x = Department, y = Category, fill = salary)) +
+  geom_tile() +
+  labs(x = "Department", y = "Category", fill = "Average Salary") +
+  ggtitle("Average Salary of Select Roles in Select Departments")
+
+plot2
+```

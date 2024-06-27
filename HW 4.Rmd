@@ -1,0 +1,144 @@
+---
+title: "Homework 4"
+author: "AIDAN HOLLAND"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Instructions
+
+**Exercises:**  2,3 (Pg. 151); 2,4 (Pg. 156); 1,2 (Pgs. 160-161); 2 (Pg. 163); 2,3,4 (Pg. 168)
+
+**Submission:** Submit via an electronic document on Sakai. Must be submitted as a HTML file generated in RStudio. All assigned problems are chosen according to the textbook *R for Data Science*. You do not need R code to answer every question. If you answer without using R code, delete the code chunk. If the question requires R code, make sure you display R code. If the question requires a figure, make sure you display a figure. A lot of the questions can be answered in written response, but require R code and/or figures for understanding and explaining.
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+# Chapter 9 (Pg. 151)
+
+##  Exercise 2
+```{r}
+table2Cases <- filter(table2,type=="cases") %>%
+  rename(cases=count) %>%
+  arrange(country,year)
+table2Pop <- filter(table2,type=="population") %>%
+  rename(pop=count) %>%
+  arrange(country,year)
+table2CasesPerCapita <- tibble(
+  year=table2Cases$year,
+  country=table2Cases$country,
+  cases=table2Cases$cases,
+  pop=table2Pop$pop
+) %>%
+  mutate(casesPerCapita=(cases/pop)*10000) %>%
+  select(country,year,casesPerCapita)
+table2CasesPerCapita <- table2CasesPerCapita %>%
+  mutate(type="casesPerCapita") %>%
+  rename(count=casesPerCapita)
+bind_rows(table2,table2CasesPerCapita) %>%
+  arrange(country,year,type,count)
+table4c <- tibble(
+  country=table4a$country,
+  "1999" = table4a[["1999"]] / table4b[["1999"]] * 10000,
+  "2000" = table4a[["2000"]] / table4b[["2000"]] * 10000,
+)
+table4c
+```
+
+If table 2 simply had columns for cases and population rather than an additional row for each type then it would be much easier to simply add a column for the per capita data. Table 4 was easier because there were different tables that could be accessed individually for the per capita data to be produced, but still not ideal.
+
+##  Exercise 3
+
+We need to ensure that only cases are being handled rather than population in table 2.
+
+```{r}
+table2 %>%
+  filter(type=="cases") %>%
+  ggplot(aes(year,count)) +
+  geom_line(aes(group=country)) +
+  geom_point(aes(color=country)) +
+  ylab("cases") +
+  xlab("year")
+```
+
+# Chapter 9 (Pg. 156)
+
+##  Exercise 2
+
+The code fails as the names of the years are not string values.
+
+##  Exercise 4
+```{r}
+preg <- tribble(
+  ~pregnant, ~male, ~female,
+  "yes", NA, 10,
+  "no", 20, 12
+)
+preg_tidied <- preg %>%
+  pivot_longer(c(male,female), names_to="sex", values_to="count", values_drop_na=T)
+preg_tidied
+```
+
+We need to make it longer, and the variables are sex, pregnancy status, and count of observations.
+
+# Chapter 9 (Pgs. 160-161)
+
+##  Exercise 1
+```{r}
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>%
+ separate(x, c("one", "two", "three"), extra="drop")
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>%
+ separate(x, c("one", "two", "three"), extra="merge")
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>%
+ separate(x, c("one", "two", "three"), fill="right")
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>%
+ separate(x, c("one", "two", "three"), fill="left")
+```
+
+Extra helps if there are too many data pieces, whereas fill helps if there aren't enough. Separate will inherently drop values, so these options provide more ways to deal with untidied data.
+
+##  Exercise 2
+```{r}
+#
+```
+
+# Chapter 9 (Pg. 163)
+
+##  Exercise 2
+
+Remove argument ordinarily will remove the columns used in its input when it returns a data frame. If you set it to false, the new and the old columns will be kept.
+
+# Chapter 9 (Pg. 168)
+
+##  Exercise 2
+
+If you don't have the mutate() step in the code, you will get a warning for there being too few values. It results in missing or incorrect data.
+
+##  Exercise 3
+```{r}
+who1 <- who %>%
+ gather(
+ new_sp_m014:newrel_f65, key = "key",
+ value = "cases",
+ na.rm = TRUE
+ )
+who2 <- who1 %>%
+ mutate(key = stringr::str_replace(key, "newrel", "new_rel"))
+who3 <- who2 %>%
+ separate(key, c("new", "type", "sexage"), sep = "_")
+who4 <- who3 %>%
+ select(-new, -iso2, -iso3)
+who5 <- who4 %>%
+ separate(sexage, c("sex", "age"), sep = 1)
+
+```
+
+##  Exercise 4
+```{r}
+#
+```

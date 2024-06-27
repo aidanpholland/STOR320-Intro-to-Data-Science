@@ -1,0 +1,85 @@
+---
+title: "Homework 7"
+author: "AIDAN HOLLAND"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Instructions
+
+**Exercises:**  1,4 (Pg. 358); 1,4 (Pgs. 371)
+
+**Submission:** Submit via an electronic document on Sakai. Must be submitted as a HTML file generated in RStudio. All assigned problems are chosen according to the textbook *R for Data Science*. You do not need R code to answer every question. If you answer without using R code, delete the code chunk. If the question requires R code, make sure you display R code. If the question requires a figure, make sure you display a figure. A lot of the questions can be answered in written response, but require R code and/or figures for understanding and explaining.
+
+```{r, include=FALSE}
+library(tidyverse)
+library(modelr)
+```
+
+
+# Chapter 18 (Pg. 358)
+
+##  Exercise 1
+```{r}
+sim1loess <- loess(y ~ x, data = sim1)
+sim1lm <- lm(y ~ x, data = sim1)
+loess <- sim1 %>%
+  add_predictions(sim1loess)
+sim1 <- sim1 %>%
+  add_residuals(sim1lm) %>%
+  add_predictions(sim1lm) %>%
+  add_residuals(sim1loess, var ="resid_loess") %>%
+  add_predictions(sim1loess,var = "pred_loess")
+plotloess<-ggplot(sim1,aes(x=x,y=y))+
+  geom_point()+
+  geom_line(aes(x=x,y=pred),data=loess)
+plotloess
+plotloess2<-plotloess+
+  geom_smooth(method="loess",se=F)
+plotloess2
+```
+
+Same result!
+
+##  Exercise 4
+```{r}
+sim1_2<-lm(y~x,data=sim1)
+sim1<-sim1%>%
+  add_residuals(sim1_2)
+ggplot(sim1,aes(x=abs(resid)))+
+  geom_freqpoly()
+```
+
+Looking at the frequency polgyon of absolute residuals gives a solid idea of the variation that the residuals have, but we're entirely missing out on the sign that might indicate a possible preferred over or underestimation of the residuals.
+
+# Chapter 18 (Pg. 371)
+
+##  Exercise 1
+```{r}
+model2<-lm(y~x,data=sim2)
+model2a<-lm(y~x-1,data=sim2)
+
+check<-sim2%>%
+  data_grid(x) %>%
+  spread_predictions(model2,model2a)
+check
+```
+
+They're identical
+
+##  Exercise 4
+```{r}
+model1<-lm(y~x1+x2,data=sim4)
+model2<-lm(y~x1*x2,data=sim4)
+sim4mods<-gather_residuals(sim4,model1,model2)
+ggplot(sim4mods,aes(x=resid,color=model))+
+  geom_freqpoly()+
+  geom_rug()
+ggplot(sim4mods,aes(x=abs(resid),color=model))+
+  geom_freqpoly()+
+  geom_rug()
+```
